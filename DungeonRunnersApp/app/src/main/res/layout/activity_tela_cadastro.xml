@@ -6,26 +6,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#1A1A2E"
-    tools:context=".MainActivity">
+    tools:context=".TelaCadastro">
 
     <!-- Imagem do título -->
     <ImageView
-        android:id="@+id/imgTitulo"
+        android:id="@+id/imgTituloCadastro"
         android:layout_width="412dp"
         android:layout_height="200dp"
-        android:layout_marginBottom="30dp"
-        app:layout_constraintBottom_toTopOf="@+id/cardLogin"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintBottom_toTopOf="@+id/cardCadastro"
         app:srcCompat="@drawable/imgtitulo"
         tools:layout_editor_absoluteX="-1dp" />
 
     <!-- Container principal com borda -->
     <androidx.cardview.widget.CardView
-        android:id="@+id/cardLogin"
+        android:id="@+id/cardCadastro"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="50dp"
         app:cardBackgroundColor="#2A2A40"
         app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
@@ -50,16 +50,16 @@
                 android:padding="12dp">
 
                 <TextView
-                    android:id="@+id/txtTituloLogin"
+                    android:id="@+id/txtTituloCadastro"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Login"
+                    android:text="Cadastro"
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Campo de Login -->
+            <!-- Campo de Nome -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -73,13 +73,40 @@
                 android:paddingBottom="14dp">
 
                 <EditText
-                    android:id="@+id/edtUsuario"
+                    android:id="@+id/edtNome"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@null"
-                    android:hint="Usuário"
-                    android:inputType="textEmailAddress"
+                    android:hint="Nome Completo"
+                    android:inputType="textPersonName"
+                    android:padding="4dp"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#6C6C7E"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Campo de Nickname -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/input_background"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="14dp">
+
+                <EditText
+                    android:id="@+id/edtNickname"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="Nickname"
+                    android:inputType="text"
                     android:padding="4dp"
                     android:textColor="#FFFFFF"
                     android:textColorHint="#6C6C7E"
@@ -100,7 +127,7 @@
                 android:paddingBottom="14dp">
 
                 <EditText
-                    android:id="@+id/edtSenha"
+                    android:id="@+id/edtSenhaCadastro"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -113,15 +140,42 @@
                     android:textSize="15sp" />
             </LinearLayout>
 
-            <!-- Botão Login -->
+            <!-- Campo de Confirmar Senha -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/input_background"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="14dp">
+
+                <EditText
+                    android:id="@+id/edtConfirmarSenha"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="Confirme a Senha"
+                    android:inputType="textPassword"
+                    android:padding="4dp"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#6C6C7E"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Botão Cadastrar -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEntrarLogin"
+                android:id="@+id/btnCadastrar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:backgroundTint="#FF6B35"
-                android:text="Entrar"
+                android:text="Cadastrar"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
@@ -129,13 +183,13 @@
                 app:cornerRadius="8dp"
                 app:elevation="0dp" />
 
-            <!-- Botão Cadastrar -->
+            <!-- Botão Voltar -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCadastrarLogin"
+                android:id="@+id/btnVoltar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:backgroundTint="#3A3A52"
-                android:text="Criar Conta"
+                android:text="Voltar"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
