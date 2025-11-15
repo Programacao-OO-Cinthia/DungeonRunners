@@ -3,7 +3,7 @@ package com.example.dungeonrunnersapp;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -19,12 +19,15 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import Type.Player;
 import Type.SupabaseClient;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     private Button btnEntrarLogin;
     private Button btnCadastrarLogin;
@@ -44,13 +47,8 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Inicializar cliente Supabase
         supabaseClient = new SupabaseClient();
-
-        // Inicializar componentes
         inicializarComponentes();
-
-        // Configurar listeners
         configurarListeners();
     }
 
@@ -62,19 +60,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void configurarListeners() {
-        btnEntrarLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                realizarLogin();
-            }
-        });
-
-        btnCadastrarLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mudarTelaCadastro();
-            }
-        });
+        btnEntrarLogin.setOnClickListener(v -> realizarLogin());
+        btnCadastrarLogin.setOnClickListener(v -> mudarTelaCadastro());
     }
 
     private void mudarTelaCadastro() {
@@ -86,22 +73,20 @@ public class MainActivity extends AppCompatActivity {
         String usuario = edtUsuario.getText().toString().trim();
         String senha = edtSenha.getText().toString();
 
-        // Validação básica
         if (usuario.isEmpty() || senha.isEmpty()) {
             Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Desabilitar botão durante o login
         btnEntrarLogin.setEnabled(false);
-
-        // Buscar usuário no banco
         buscarUsuarioNoBanco(usuario, senha);
     }
 
     private void buscarUsuarioNoBanco(String usuario, String senha) {
-        // Busca por nickname ou nome
-        String query = "perfis?or=(nickname.eq." + usuario + ",nome.eq." + usuario + ")";
+        // CORRIGIDO: Buscar com select=* para pegar todos os campos
+        String query = "perfis?select=*&or=(nickname.eq." + usuario + ",nome.eq." + usuario + ")";
+
+        Log.d(TAG, "Buscando usuário: " + usuario);
 
         supabaseClient.request("GET", query, null, new Callback() {
             @Override
@@ -111,12 +96,15 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this,
                             "Erro de conexão: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Erro de conexão: " + e.getMessage());
                 });
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseBody = response.body().string();
+
+                Log.d(TAG, "Response: " + responseBody);
 
                 runOnUiThread(() -> {
                     btnEntrarLogin.setEnabled(true);
@@ -131,24 +119,20 @@ public class MainActivity extends AppCompatActivity {
                             return;
                         }
 
-                        JSONObject usuarioEncontrado = usuarios.getJSONObject(0);
-                        String senhaArmazenada = usuarioEncontrado.getString("senha");
+                        JSONObject usuarioJson = usuarios.getJSONObject(0);
+                        String senhaArmazenada = usuarioJson.getString("senha");
 
                         if (senha.equals(senhaArmazenada)) {
-                            // Login bem-sucedido
-                            salvarSessao(usuarioEncontrado);
+                            Player player = criarPlayerDoJSON(usuarioJson);
+                            salvarSessao(player);
+
                             Toast.makeText(MainActivity.this,
                                     "Login realizado com sucesso!",
                                     Toast.LENGTH_SHORT).show();
 
-                            // Limpar campos
-                            edtUsuario.setText("");
-                            edtSenha.setText("");
-
-                            // Navegar para próxima tela (crie uma TelaPrincipal)
-                            // Intent intent = new Intent(MainActivity.this, TelaPrincipal.class);
-                            // startActivity(intent);
-                            // finish();
+                            Intent intent = new Intent(MainActivity.this, TelaPrincipal.class);
+                            startActivity(intent);
+                            finish();
                         } else {
                             Toast.makeText(MainActivity.this,
                                     "Senha incorreta",
@@ -159,29 +143,52 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this,
                                 "Erro ao processar login: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
+                        Log.e(TAG, "Erro ao processar login", e);
                     }
                 });
             }
         });
     }
 
-    private void salvarSessao(JSONObject usuario) {
+    private Player criarPlayerDoJSON(JSONObject json) throws Exception {
+        String id = json.getString("id");
+        String nickname = json.getString("nickname");
+        int nivel = json.getInt("nivel");
+        int idCla = json.has("idcla") ? json.getInt("idcla") : 0;
+
+        // CORREÇÃO: Ler kmTotal (com T maiúsculo) do banco
+        double kmTotal = 0.0;
+        if (json.has("kmTotal") && !json.isNull("kmTotal")) {
+            kmTotal = json.getDouble("kmTotal");
+        }
+
+        int fitCoins = json.getInt("fitcoins");
+        int xp = json.getInt("xp");
+
+        Log.d(TAG, "✅ Player carregado - Nickname: " + nickname + ", KM: " + kmTotal);
+
+        return new Player(id, nickname, nivel, idCla, kmTotal, fitCoins, xp);
+    }
+
+    private void salvarSessao(Player player) {
         try {
             SharedPreferences prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
 
-            editor.putString("userId", usuario.getString("id"));
-            editor.putString("nome", usuario.getString("nome"));
-            editor.putString("nickname", usuario.getString("nickname"));
-            editor.putInt("nivel", usuario.getInt("nivel"));
-            editor.putInt("xp", usuario.getInt("xp"));
-            editor.putInt("fitcoins", usuario.getInt("fitcoins"));
+            editor.putString("userId", player.getId());
+            editor.putString("nickname", player.getNickname());
+            editor.putInt("nivel", player.getNivel());
+            editor.putInt("idCla", player.getIdCla());
+            editor.putFloat("kmPercorridos", (float) player.getKmTotal());
+            editor.putInt("fitcoins", player.getFitCoins());
+            editor.putInt("xp", player.getXp());
             editor.putBoolean("logado", true);
 
             editor.apply();
+
+            Log.d(TAG, "✅ Sessão salva - User ID: " + player.getId() + ", KM inicial: " + player.getKmTotal());
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "❌ Erro ao salvar sessão", e);
         }
     }
 }

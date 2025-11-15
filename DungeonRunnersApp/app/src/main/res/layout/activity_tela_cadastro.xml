@@ -9,8 +9,10 @@
     tools:context=".TelaCadastro">
 
     <!-- Imagem do título -->
+
+    <!-- Container principal com borda -->
     <ImageView
-        android:id="@+id/imgTituloCadastro"
+        android:id="@+id/imgtitulo"
         android:layout_width="412dp"
         android:layout_height="200dp"
         android:layout_marginBottom="4dp"
@@ -18,7 +20,6 @@
         app:srcCompat="@drawable/imgtitulo"
         tools:layout_editor_absoluteX="-1dp" />
 
-    <!-- Container principal com borda -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardCadastro"
         android:layout_width="0dp"

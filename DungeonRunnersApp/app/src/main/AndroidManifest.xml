@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <!-- Permissões -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -13,9 +19,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DungeonRunnersApp">
-        <activity
-            android:name=".TelaCadastro"
-            android:exported="false" />
+        <!-- Chave do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBv4l0INz7mZty2QHO0ZYGpCAGAdCT4wEs" /> <!-- Activity Principal (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -24,7 +31,18 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity> <!-- Tela Principal -->
+        <activity
+            android:name=".TelaPrincipal"
+            android:exported="false" /> <!-- Tela de Cadastro -->
+        <activity
+            android:name=".TelaCadastro"
+            android:exported="false" /> <!-- Serviço de Localização -->
+        <service
+            android:name=".ServicoLocalizacao"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
 </manifest>
