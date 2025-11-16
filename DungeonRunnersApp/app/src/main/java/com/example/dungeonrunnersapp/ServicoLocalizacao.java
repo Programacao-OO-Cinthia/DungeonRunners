@@ -26,6 +26,7 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import Type.SupabaseClient;
@@ -75,6 +76,9 @@ public class ServicoLocalizacao extends Service {
 
         // Iniciar atualizações de localização
         iniciarAtualizacoesLocalizacao();
+
+        // Sincronizar com o banco de dados
+        sincronizarDadosIniciais();
 
         Log.d(TAG, "Serviço configurado e pronto");
     }
@@ -196,6 +200,57 @@ public class ServicoLocalizacao extends Service {
         } catch (Exception e) {
             Log.e(TAG, "❌ Erro ao enviar broadcast: " + e.getMessage());
         }
+    }
+
+    private void sincronizarDadosIniciais() {
+        String userId = prefs.getString("userId", "");
+        if (!userId.isEmpty()) {
+            // Busca dados atualizados do banco ao iniciar o serviço
+            buscarDadosAtualizados(userId);
+        }
+    }
+
+    private void buscarDadosAtualizados(String userId) {
+        String query = "perfis?select=kmTotal,xp,fitcoins&id=eq." + userId;
+
+        supabaseClient.request("GET", query, null, new okhttp3.Callback() {
+            @Override
+            public void onFailure(okhttp3.Call call, java.io.IOException e) {
+                Log.e(TAG, "Erro ao sincronizar dados iniciais: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(okhttp3.Call call, okhttp3.Response response) throws java.io.IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        String responseBody = response.body().string();
+                        JSONArray array = new JSONArray(responseBody);
+                        if (array.length() > 0) {
+                            JSONObject data = array.getJSONObject(0);
+
+                            // Atualiza SharedPreferences com dados do banco
+                            SharedPreferences.Editor editor = prefs.edit();
+                            if (data.has("kmTotal") && !data.isNull("kmTotal")) {
+                                double kmBanco = data.getDouble("kmTotal");
+                                editor.putFloat("kmPercorridos", (float) kmBanco);
+                                distanciaPercorrida = kmBanco * 1000; // Converte para metros
+                            }
+                            if (data.has("xp") && !data.isNull("xp")) {
+                                editor.putInt("xp", data.getInt("xp"));
+                            }
+                            if (data.has("fitcoins") && !data.isNull("fitcoins")) {
+                                editor.putInt("fitcoins", data.getInt("fitcoins"));
+                            }
+                            editor.apply();
+
+                            Log.d(TAG, "✅ Dados sincronizados do banco - KM: " + (distanciaPercorrida / 1000));
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Erro ao processar sincronização: " + e.getMessage());
+                    }
+                }
+            }
+        });
     }
 
     private void salvarProgresso() {

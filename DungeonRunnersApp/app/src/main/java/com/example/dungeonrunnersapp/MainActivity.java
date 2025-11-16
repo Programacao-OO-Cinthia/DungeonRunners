@@ -154,9 +154,8 @@ public class MainActivity extends AppCompatActivity {
         String id = json.getString("id");
         String nickname = json.getString("nickname");
         int nivel = json.getInt("nivel");
-        int idCla = json.has("idcla") ? json.getInt("idcla") : 0;
+        int idCla = json.has("idcla") && !json.isNull("idcla") ? json.getInt("idcla") : 0;
 
-        // CORREÇÃO: Ler kmTotal (com T maiúsculo) do banco
         double kmTotal = 0.0;
         if (json.has("kmTotal") && !json.isNull("kmTotal")) {
             kmTotal = json.getDouble("kmTotal");
@@ -164,8 +163,6 @@ public class MainActivity extends AppCompatActivity {
 
         int fitCoins = json.getInt("fitcoins");
         int xp = json.getInt("xp");
-
-        Log.d(TAG, "✅ Player carregado - Nickname: " + nickname + ", KM: " + kmTotal);
 
         return new Player(id, nickname, nivel, idCla, kmTotal, fitCoins, xp);
     }

@@ -19,6 +19,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DungeonRunnersApp">
+        <activity
+            android:name=".TelaRanking"
+            android:exported="false" />
         <!-- Chave do Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"

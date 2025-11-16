@@ -12,6 +12,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -123,13 +124,83 @@ public class TelaCadastro extends AppCompatActivity {
             return;
         }
 
-        // Se todas as validações passarem
-        cadastrarUsuarioNoBanco(nome, nickname, senha);
+        // Verificar se o nickname já existe antes de cadastrar
+        verificarNicknameDisponivel(nome, nickname, senha);
+    }
+
+    /**
+     * Verifica se o nickname já está em uso no banco de dados
+     */
+    private void verificarNicknameDisponivel(String nome, String nickname, String senha) {
+        btnCadastrar.setEnabled(false);
+        btnCadastrar.setText("Verificando...");
+
+        // Query para buscar usuários com o mesmo nickname
+        String query = "perfis?select=id&nickname=eq." + nickname;
+
+        supabaseClient.request("GET", query, null, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    btnCadastrar.setEnabled(true);
+                    btnCadastrar.setText("Cadastrar");
+                    Toast.makeText(TelaCadastro.this,
+                            "Erro de conexão: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                runOnUiThread(() -> {
+                    btnCadastrar.setEnabled(true);
+                    btnCadastrar.setText("Cadastrar");
+                });
+
+                try {
+                    String responseBody = response.body().string();
+
+                    if (response.isSuccessful()) {
+                        JSONArray usuarios = new JSONArray(responseBody);
+
+                        if (usuarios.length() > 0) {
+                            // Nickname já existe
+                            runOnUiThread(() -> {
+                                Toast.makeText(TelaCadastro.this,
+                                        "❌ Este nickname já está em uso! Escolha outro.",
+                                        Toast.LENGTH_LONG).show();
+                                edtNickname.requestFocus();
+                                edtNickname.selectAll();
+                            });
+                        } else {
+                            // Nickname disponível, prosseguir com cadastro
+                            runOnUiThread(() -> {
+                                cadastrarUsuarioNoBanco(nome, nickname, senha);
+                            });
+                        }
+                    } else {
+                        // Erro na consulta
+                        runOnUiThread(() -> {
+                            Toast.makeText(TelaCadastro.this,
+                                    "Erro ao verificar nickname. Tente novamente.",
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(TelaCadastro.this,
+                                "Erro ao processar verificação: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        });
     }
 
     private void cadastrarUsuarioNoBanco(String nome, String nickname, String senha) {
         // Desabilitar o botão para evitar cliques múltiplos
         btnCadastrar.setEnabled(false);
+        btnCadastrar.setText("Cadastrando...");
 
         try {
             String uuid = UUID.randomUUID().toString();
@@ -142,6 +213,7 @@ public class TelaCadastro extends AppCompatActivity {
             perfil.put("nivel", 1);
             perfil.put("xp", 0);
             perfil.put("fitcoins", 100);
+            perfil.put("kmTotal", 0.0);
             perfil.put("role", "usuario");
 
             supabaseClient.insert("perfis", perfil, new Callback() {
@@ -149,6 +221,7 @@ public class TelaCadastro extends AppCompatActivity {
                 public void onFailure(Call call, IOException e) {
                     runOnUiThread(() -> {
                         btnCadastrar.setEnabled(true);
+                        btnCadastrar.setText("Cadastrar");
                         Toast.makeText(TelaCadastro.this,
                                 "Erro de conexão: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
@@ -159,36 +232,56 @@ public class TelaCadastro extends AppCompatActivity {
                 public void onResponse(Call call, Response response) throws IOException {
                     runOnUiThread(() -> {
                         btnCadastrar.setEnabled(true);
+                        btnCadastrar.setText("Cadastrar");
+                    });
 
-                        if (response.isSuccessful()) {
+                    if (response.isSuccessful()) {
+                        runOnUiThread(() -> {
                             Toast.makeText(TelaCadastro.this,
-                                    "Cadastro realizado com sucesso!",
+                                    "✅ Cadastro realizado com sucesso!",
                                     Toast.LENGTH_LONG).show();
                             limparCampos();
 
                             // Voltar para a tela de login após 1 segundo
                             new android.os.Handler().postDelayed(() -> finish(), 1000);
-                        } else {
-                            try {
-                                String errorBody = response.body().string();
-                                Toast.makeText(TelaCadastro.this,
-                                        "Erro ao cadastrar: " + errorBody,
-                                        Toast.LENGTH_LONG).show();
-                            } catch (IOException e) {
+                        });
+                    } else {
+                        try {
+                            String errorBody = response.body().string();
+                            runOnUiThread(() -> {
+                                // Verificar se é erro de unique constraint
+                                if (errorBody.contains("duplicate key") || errorBody.contains("unique")) {
+                                    Toast.makeText(TelaCadastro.this,
+                                            "❌ Este nickname já está em uso! Escolha outro.",
+                                            Toast.LENGTH_LONG).show();
+                                    edtNickname.requestFocus();
+                                    edtNickname.selectAll();
+                                } else {
+                                    Toast.makeText(TelaCadastro.this,
+                                            "Erro ao cadastrar: " + errorBody,
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        } catch (IOException e) {
+                            runOnUiThread(() -> {
                                 Toast.makeText(TelaCadastro.this,
                                         "Erro ao cadastrar",
                                         Toast.LENGTH_SHORT).show();
-                            }
+                            });
                         }
-                    });
+                    }
                 }
             });
 
         } catch (Exception e) {
-            btnCadastrar.setEnabled(true);
-            Toast.makeText(this, "Erro ao criar perfil: " + e.getMessage(),
-                    Toast.LENGTH_LONG).show();
-            e.printStackTrace();
+            runOnUiThread(() -> {
+                btnCadastrar.setEnabled(true);
+                btnCadastrar.setText("Cadastrar");
+                Toast.makeText(TelaCadastro.this,
+                        "Erro ao criar perfil: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            });
         }
     }
 

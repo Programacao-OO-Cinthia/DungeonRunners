@@ -105,6 +105,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         configurarListeners();
         inicializarMapa();
         verificarPermissoesLocalizacao();
+        configurarNavegacaoInferior();
 
         // Inicializar e registrar o BroadcastReceiver
         inicializarBroadcastReceiver();
@@ -150,11 +151,15 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         try {
             IntentFilter filter = new IntentFilter(ServicoLocalizacao.ACTION_KM_ATUALIZADO);
 
-            // Registrar com flags apropriadas
+            // CORREÇÃO: Especificar flag RECEIVER_EXPORTED apropriadamente
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                registerReceiver(kmReceiver, filter, Context.RECEIVER_EXPORTED);
-            } else {
-                registerReceiver(kmReceiver, filter);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // Android 13+ - Precisa especificar explicitamente
+                    registerReceiver(kmReceiver, filter, Context.RECEIVER_EXPORTED);
+                } else {
+                    // Android 8-12 - Não precisa da flag
+                    registerReceiver(kmReceiver, filter,Context.RECEIVER_NOT_EXPORTED);
+                }
             }
 
             isReceiverRegistered = true;
@@ -587,5 +592,12 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             editor.apply();
             Log.d(TAG, "Player salvo - KM: " + playerAtual.getKmTotal());
         }
+    }
+
+    private void configurarNavegacaoInferior() {
+        findViewById(R.id.btnNavRanking).setOnClickListener(v -> {
+            Intent intent = new Intent(TelaPrincipal.this, TelaRanking.class);
+            startActivity(intent);
+        });
     }
 }
