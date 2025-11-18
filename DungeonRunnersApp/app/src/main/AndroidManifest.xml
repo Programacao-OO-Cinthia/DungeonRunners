@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
     <!-- Permissões -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Para Android 9 e inferior -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" tools:node="remove" />
 
     <application
         android:allowBackup="true"
@@ -18,34 +26,53 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DungeonRunnersApp">
+        android:theme="@style/Theme.DungeonRunnersApp"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+
+        <!-- Activities -->
         <activity
             android:name=".TelaRanking"
             android:exported="false" />
-        <!-- Chave do Google Maps -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBv4l0INz7mZty2QHO0ZYGpCAGAdCT4wEs" /> <!-- Activity Principal (Launcher) -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- Tela Principal -->
+        </activity>
+
         <activity
             android:name=".TelaPrincipal"
-            android:exported="false" /> <!-- Tela de Cadastro -->
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".TelaCadastro"
-            android:exported="false" /> <!-- Serviço de Localização -->
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Serviço de Localização -->
         <service
             android:name=".ServicoLocalizacao"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="location"
+            android:stopWithTask="false" /> <!-- IMPORTANTE: Não parar com o task -->
+
+        <!-- Meta-data do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBv4l0INz7mZty2QHO0ZYGpCAGAdCT4wEs" />
+
+        <!-- Meta-data para serviços do Google Play -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
     </application>
 
 </manifest>

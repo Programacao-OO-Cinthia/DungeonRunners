@@ -11,7 +11,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,10 +49,10 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
 
     private static final String TAG = "TelaPrincipal";
 
-    // Player atual
+    // Jogador atual
     private Player playerAtual;
 
-    // UI Components
+    // Componentes da interface
     private TextView txtNomeUsuario;
     private TextView txtNivelUsuario;
     private TextView txtXP;
@@ -60,30 +60,32 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     private TextView txtKmPercorridos;
     private FloatingActionButton fabLocalizacao;
 
-    // Menu Buttons
+    // Botões do menu
     private ImageButton btnMissoes;
     private ImageButton btnInventario;
     private ImageButton btnGuilda;
     private ImageButton btnLoja;
 
-    // Dungeon Cards
+    // Cards das dungeons
     private CardView cardDungeon1;
     private CardView cardDungeon2;
     private CardView cardDungeon3;
 
-    // Mapa e Localização
+    // Sistema de mapa e localização
     private GoogleMap mMap;
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
     private Location currentLocation;
 
-    // Launcher para permissões
+    // Gerenciamento de permissões
     private ActivityResultLauncher<String[]> locationPermissionLauncher;
+    private ActivityResultLauncher<String> backgroundLocationLauncher;
     private boolean permissoesLocalizacaoConcedidas = false;
 
-    // BroadcastReceiver para atualizar KMs
+    // Receptor de broadcasts para atualizar os quilômetros em tempo real
     private BroadcastReceiver kmReceiver;
     private boolean isReceiverRegistered = false;
+    private Handler uiHandler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,9 +98,8 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             return insets;
         });
 
-        Log.d(TAG, "onCreate iniciado");
-
-        inicializarPermissionLauncher();
+        // Inicializa tudo que precisa pra tela funcionar
+        inicializarPermissionLaunchers();
         inicializarComponentes();
         carregarPlayer();
         atualizarUICompleta();
@@ -107,40 +108,89 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         verificarPermissoesLocalizacao();
         configurarNavegacaoInferior();
 
-        // Inicializar e registrar o BroadcastReceiver
+        // Configura o sistema de receber atualizações de distância
         inicializarBroadcastReceiver();
         registrarBroadcastReceiver();
+
+        // Aguarda um pouco e força o início do rastreamento
+        uiHandler.postDelayed(() -> {
+            if (permissoesLocalizacaoConcedidas && !isServicoLocalizacaoRodando()) {
+                iniciarServicoLocalizacao();
+            }
+        }, 2000);
+    }
+
+    private void inicializarPermissionLaunchers() {
+        // Configura o tratamento de resposta das permissões de localização
+        locationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    Boolean fineLocation = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
+                    Boolean coarseLocation = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
+
+                    if (fineLocation != null && fineLocation) {
+                        // Tudo certo! Permissão precisa concedida
+                        permissoesLocalizacaoConcedidas = true;
+                        inicializarLocalizacao();
+                        habilitarLocalizacaoNoMapa();
+
+                        // Pede permissão de background se o Android for Q ou superior
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            solicitarPermissaoBackground();
+                        } else {
+                            iniciarServicoLocalizacao();
+                        }
+                    } else if (coarseLocation != null && coarseLocation) {
+                        // Permissão aproximada também serve
+                        permissoesLocalizacaoConcedidas = true;
+                        inicializarLocalizacao();
+                        Toast.makeText(this, "Localização aproximada ativada", Toast.LENGTH_SHORT).show();
+                        iniciarServicoLocalizacao();
+                    } else {
+                        // Usuário negou as permissões
+                        permissoesLocalizacaoConcedidas = false;
+                        mostrarDialogoPermissaoNegada();
+                    }
+                }
+        );
+
+        // Tratamento específico para permissão de background (Android 10+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            backgroundLocationLauncher = registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    isGranted -> {
+                        if (isGranted) {
+                            Toast.makeText(this, "Rastreamento em background ativado!", Toast.LENGTH_SHORT).show();
+                            iniciarServicoLocalizacao();
+                        } else {
+                            Toast.makeText(this, "Rastreamento em background limitado", Toast.LENGTH_LONG).show();
+                            // Inicia mesmo assim, vai funcionar quando o app tiver aberto
+                            iniciarServicoLocalizacao();
+                        }
+                    }
+            );
+        }
     }
 
     private void inicializarBroadcastReceiver() {
+        // Cria o receptor que vai escutar atualizações do serviço de localização
         kmReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.d(TAG, "📡 BroadcastReceiver triggered");
-
                 if (intent.getAction() != null && intent.getAction().equals(ServicoLocalizacao.ACTION_KM_ATUALIZADO)) {
                     float kmTotal = intent.getFloatExtra("kmTotal", 0.0f);
                     long timestamp = intent.getLongExtra("timestamp", 0);
 
-                    Log.d(TAG, "🎯 KM recebido do broadcast: " + kmTotal + " km");
-
-                    // Executar na thread UI
+                    // Atualiza a interface na thread principal
                     runOnUiThread(() -> {
-                        // Atualizar o objeto Player
                         if (playerAtual != null) {
                             playerAtual.setKmTotal(kmTotal);
                         }
 
-                        // Atualizar UI
                         txtKmPercorridos.setText(String.format("%.2f km", kmTotal));
-
-                        // Atualizar também XP se necessário
                         atualizarUICompleta();
-
-                        Log.d(TAG, "✅ UI atualizada em tempo real - KM: " + kmTotal);
                     });
 
-                    // Atualizar SharedPreferences
                     salvarPlayer();
                 }
             }
@@ -151,55 +201,24 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         try {
             IntentFilter filter = new IntentFilter(ServicoLocalizacao.ACTION_KM_ATUALIZADO);
 
-            // CORREÇÃO: Especificar flag RECEIVER_EXPORTED apropriadamente
+            // Registra de forma apropriada dependendo da versão do Android
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // Android 13+ - Precisa especificar explicitamente
                     registerReceiver(kmReceiver, filter, Context.RECEIVER_EXPORTED);
                 } else {
-                    // Android 8-12 - Não precisa da flag
-                    registerReceiver(kmReceiver, filter,Context.RECEIVER_NOT_EXPORTED);
+                    registerReceiver(kmReceiver, filter, RECEIVER_EXPORTED);
                 }
+            } else {
             }
 
             isReceiverRegistered = true;
-            Log.d(TAG, "✅ BroadcastReceiver registrado com sucesso!");
         } catch (Exception e) {
-            Log.e(TAG, "❌ Erro ao registrar BroadcastReceiver: " + e.getMessage());
-            e.printStackTrace();
+            // Se falhar, não tem problema, só não vai atualizar em tempo real
         }
     }
 
-    private void inicializarPermissionLauncher() {
-        locationPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestMultiplePermissions(),
-                result -> {
-                    Boolean fineLocation = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-                    Boolean coarseLocation = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-
-                    if (fineLocation != null && fineLocation) {
-                        permissoesLocalizacaoConcedidas = true;
-                        inicializarLocalizacao();
-                        habilitarLocalizacaoNoMapa();
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            solicitarPermissaoBackground();
-                        } else {
-                            iniciarServicoLocalizacao();
-                        }
-                    } else if (coarseLocation != null && coarseLocation) {
-                        permissoesLocalizacaoConcedidas = true;
-                        inicializarLocalizacao();
-                        Toast.makeText(this, "Localização aproximada ativada", Toast.LENGTH_SHORT).show();
-                    } else {
-                        permissoesLocalizacaoConcedidas = false;
-                        mostrarDialogoPermissaoNegada();
-                    }
-                }
-        );
-    }
-
     private void inicializarComponentes() {
+        // Pega todas as referências dos componentes visuais
         txtNomeUsuario = findViewById(R.id.txtNomeUsuario);
         txtNivelUsuario = findViewById(R.id.txtNivelUsuario);
         txtXP = findViewById(R.id.txtXP);
@@ -218,6 +237,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     }
 
     private void carregarPlayer() {
+        // Carrega os dados salvos do jogador
         SharedPreferences prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
 
         String id = prefs.getString("userId", "");
@@ -228,27 +248,25 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         int fitCoins = prefs.getInt("fitcoins", 100);
         int xp = prefs.getInt("xp", 0);
 
-        // Criar objeto Player
         playerAtual = new Player(id, nickname, nivel, idCla, kmTotal, fitCoins, xp);
-
-        Log.d(TAG, "Player carregado: " + nickname + " - KM: " + kmTotal);
     }
 
     private void atualizarUICompleta() {
+        // Atualiza todos os campos da tela com os dados do jogador
         if (playerAtual != null) {
             txtNomeUsuario.setText(playerAtual.getNickname());
             txtNivelUsuario.setText("Nível " + playerAtual.getNivel());
             txtXP.setText(String.valueOf(playerAtual.getXp()));
             txtFitCoins.setText(String.valueOf(playerAtual.getFitCoins()));
             txtKmPercorridos.setText(String.format("%.2f km", playerAtual.getKmTotal()));
-
-            Log.d(TAG, "UI atualizada - KM: " + playerAtual.getKmTotal());
         }
     }
 
     private void configurarListeners() {
+        // Botão de centralizar no mapa
         fabLocalizacao.setOnClickListener(v -> centralizarLocalizacao());
 
+        // Botões do menu (funcionalidades futuras)
         btnMissoes.setOnClickListener(v -> {
             Toast.makeText(this, "Missões em desenvolvimento", Toast.LENGTH_SHORT).show();
         });
@@ -265,6 +283,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             Toast.makeText(this, "Loja em desenvolvimento", Toast.LENGTH_SHORT).show();
         });
 
+        // Cards das dungeons por dificuldade
         cardDungeon1.setOnClickListener(v -> iniciarDungeon("Fácil"));
         cardDungeon2.setOnClickListener(v -> iniciarDungeon("Médio"));
         cardDungeon3.setOnClickListener(v -> iniciarDungeon("Difícil"));
@@ -281,24 +300,26 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     private void verificarPermissoesLocalizacao() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
+            // Já tem permissão, pode iniciar tudo
             permissoesLocalizacaoConcedidas = true;
             inicializarLocalizacao();
             habilitarLocalizacaoNoMapa();
 
-            // Verificar se o serviço já está rodando
             if (!isServicoLocalizacaoRodando()) {
                 iniciarServicoLocalizacao();
             }
         } else {
+            // Precisa pedir permissão
             solicitarPermissoesLocalizacao();
         }
     }
 
     private void solicitarPermissoesLocalizacao() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Mostra explicação antes de pedir
             new AlertDialog.Builder(this)
                     .setTitle("Permissão de Localização")
-                    .setMessage("O Dungeon Runners precisa acessar sua localização para funcionar corretamente.")
+                    .setMessage("O Dungeon Runners precisa acessar sua localização para rastrear sua distância e progresso no jogo.")
                     .setPositiveButton("Permitir", (dialog, which) -> {
                         locationPermissionLauncher.launch(new String[]{
                                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -308,6 +329,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
                     .setNegativeButton("Cancelar", (dialog, which) -> mostrarDialogoPermissaoNegada())
                     .show();
         } else {
+            // Pede diretamente
             locationPermissionLauncher.launch(new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
@@ -316,31 +338,35 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     }
 
     private void solicitarPermissaoBackground() {
+        // Só pra Android 10 ou superior
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
 
                 new AlertDialog.Builder(this)
                         .setTitle("Permissão de Localização em Segundo Plano")
-                        .setMessage("Para rastrear sua movimentação em segundo plano, escolha 'Permitir o tempo todo'.")
-                        .setPositiveButton("Continuar", (dialog, which) -> {
-                            ActivityCompat.requestPermissions(this,
-                                    new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 100);
+                        .setMessage("Para rastrear sua distância percorrida mesmo com o app fechado ou em segundo plano, é necessário permitir o acesso à localização em segundo plano.\n\nEscolha 'Permitir o tempo todo' nas próximas telas.")
+                        .setPositiveButton("Solicitar", (dialog, which) -> {
+                            backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
                         })
                         .setNegativeButton("Agora não", (dialog, which) -> {
-                            Toast.makeText(this, "Rastreamento em segundo plano desativado", Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, "Rastreamento em segundo plano limitado", Toast.LENGTH_LONG).show();
+                            iniciarServicoLocalizacao();
                         })
                         .show();
             } else {
+                // Já tem permissão
                 iniciarServicoLocalizacao();
             }
+        } else {
+            iniciarServicoLocalizacao();
         }
     }
 
     private void mostrarDialogoPermissaoNegada() {
         new AlertDialog.Builder(this)
                 .setTitle("Permissão Necessária")
-                .setMessage("O app não funcionará sem acesso à localização.")
+                .setMessage("Sem acesso à localização, o app não poderá rastrear sua distância percorrida. Você pode ativar a permissão nas configurações.")
                 .setPositiveButton("Ir para Configurações", (dialog, which) -> {
                     Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                     intent.setData(android.net.Uri.parse("package:" + getPackageName()));
@@ -353,6 +379,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     private void inicializarLocalizacao() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        // Configura o callback que vai receber atualizações de localização
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
@@ -365,11 +392,13 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             }
         };
 
-        iniciarAtualizacoesLocalizacao();
+        iniciarAtualizacoesLocalizacaoUI();
         obterLocalizacaoAtual();
     }
 
-    private void iniciarAtualizacoesLocalizacao() {
+    private void iniciarAtualizacoesLocalizacaoUI() {
+        // Atualizações só para atualizar a interface (a cada 5 segundos)
+        // O rastreamento de distância é feito pelo serviço em background
         LocationRequest locationRequest = new LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY, 5000)
                 .setMinUpdateIntervalMillis(3000)
@@ -385,35 +414,34 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         if (permissoesLocalizacaoConcedidas) {
             Intent serviceIntent = new Intent(this, ServicoLocalizacao.class);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
+            try {
+                // Inicia como serviço foreground se for Android 8 ou superior
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
+
+                // Verifica se o serviço realmente começou a rodar
+                uiHandler.postDelayed(() -> {
+                    if (isServicoLocalizacaoRodando()) {
+                        Toast.makeText(this, "Rastreamento ativo! 🎯", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Erro ao iniciar rastreamento", Toast.LENGTH_SHORT).show();
+                    }
+                }, 3000);
+
+            } catch (Exception e) {
+                Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
-
-            Log.d(TAG, "Serviço de localização iniciado");
-            Toast.makeText(this, "Rastreamento iniciado!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void iniciarOuPararServicoLocalizacao(boolean iniciar) {
-        Intent serviceIntent = new Intent(this, ServicoLocalizacao.class);
-
-        if (iniciar) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-            Log.d(TAG, "Serviço de localização iniciado");
-        } else {
-            stopService(serviceIntent);
-            Log.d(TAG, "Serviço de localização parado");
         }
     }
 
     private boolean isServicoLocalizacaoRodando() {
+        // Verifica se o serviço está realmente rodando
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if (manager == null) return false;
+
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (ServicoLocalizacao.class.getName().equals(service.service.getClassName())) {
                 return true;
@@ -426,17 +454,20 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
+        // Aplica estilo escuro no mapa
         try {
             mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_dark));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        // Desabilita controles padrão do Google Maps
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setCompassEnabled(false);
 
+        // Posição inicial padrão (Belo Horizonte)
         LatLng defaultLocation = new LatLng(-19.9167, -43.9345);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 15));
 
@@ -463,11 +494,12 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Erro ao obter localização", Toast.LENGTH_SHORT).show();
+                    // Falhou ao obter localização, mas não precisa fazer nada
                 });
     }
 
     private void atualizarPosicaoMapa(Location location) {
+        // Atualiza a câmera do mapa para a posição atual
         if (mMap != null && location != null) {
             LatLng posicao = new LatLng(location.getLatitude(), location.getLongitude());
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(posicao, 16));
@@ -496,6 +528,7 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+        // Tratamento alternativo para permissão de background
         if (requestCode == 100) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Rastreamento em segundo plano ativado!", Toast.LENGTH_SHORT).show();
@@ -507,64 +540,64 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume chamado");
 
-        // Verificar se o receiver não está registrado e registrar novamente
+        // Registra o receiver novamente se ele foi desregistrado
         if (!isReceiverRegistered) {
             registrarBroadcastReceiver();
         }
 
+        // Reinicia o serviço se necessário
         if (permissoesLocalizacaoConcedidas) {
             if (!isServicoLocalizacaoRodando()) {
                 iniciarServicoLocalizacao();
             }
             if (fusedLocationClient != null && locationCallback != null) {
-                iniciarAtualizacoesLocalizacao();
+                iniciarAtualizacoesLocalizacaoUI();
             }
         }
+
+        // Recarrega dados e atualiza a tela
         carregarPlayer();
         atualizarUICompleta();
-
-        // Forçar uma atualização inicial
         atualizarDadosDoServico();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause chamado");
 
+        // Para as atualizações da UI, mas o serviço continua rodando
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
 
-        // NÃO desregistrar o receiver aqui para manter funcionando em background
         salvarPlayer();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy chamado");
 
+        // Limpa tudo quando a tela é destruída
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
 
-        // Desregistrar o receiver apenas no onDestroy
+        // Desregistra o receiver
         if (isReceiverRegistered && kmReceiver != null) {
             try {
                 unregisterReceiver(kmReceiver);
                 isReceiverRegistered = false;
-                Log.d(TAG, "✅ BroadcastReceiver desregistrado");
             } catch (Exception e) {
-                Log.e(TAG, "❌ Erro ao desregistrar receiver: " + e.getMessage());
+                // Não conseguiu desregistrar, mas não tem problema
             }
         }
+
+        uiHandler.removeCallbacksAndMessages(null);
     }
 
-    // Método para forçar atualização dos dados do serviço
     private void atualizarDadosDoServico() {
+        // Pega os dados mais recentes salvos pelo serviço
         SharedPreferences prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
         float kmAtual = prefs.getFloat("kmPercorridos", 0.0f);
 
@@ -573,10 +606,10 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         }
 
         txtKmPercorridos.setText(String.format("%.2f km", kmAtual));
-        Log.d(TAG, "📊 Dados atualizados do SharedPreferences: " + kmAtual + " km");
     }
 
     private void salvarPlayer() {
+        // Salva todos os dados do jogador
         if (playerAtual != null) {
             SharedPreferences prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
@@ -590,11 +623,11 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             editor.putInt("xp", playerAtual.getXp());
 
             editor.apply();
-            Log.d(TAG, "Player salvo - KM: " + playerAtual.getKmTotal());
         }
     }
 
     private void configurarNavegacaoInferior() {
+        // Botão de navegação para o ranking
         findViewById(R.id.btnNavRanking).setOnClickListener(v -> {
             Intent intent = new Intent(TelaPrincipal.this, TelaRanking.class);
             startActivity(intent);

@@ -1,16 +1,19 @@
 package com.example.dungeonrunnersapp;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -34,6 +37,8 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+import java.util.List;
+
 public class ServicoLocalizacao extends Service {
 
     private static final String TAG = "ServicoLocalizacao";
@@ -47,6 +52,7 @@ public class ServicoLocalizacao extends Service {
     private Location ultimaLocalizacao = null;
     private SupabaseClient supabaseClient;
     private SharedPreferences prefs;
+    private Handler handler = new Handler();
 
     @Override
     public void onCreate() {
@@ -61,9 +67,6 @@ public class ServicoLocalizacao extends Service {
 
         // DIAGNÓSTICO: Verificar userId
         String userId = prefs.getString("userId", "");
-        Log.d(TAG, "=== SERVIÇO INICIADO ===");
-        Log.d(TAG, "User ID: " + userId);
-        Log.d(TAG, "Distância inicial: " + (distanciaPercorrida / 1000) + " km");
 
         // Criar canal de notificação
         criarCanalNotificacao();
@@ -80,7 +83,6 @@ public class ServicoLocalizacao extends Service {
         // Sincronizar com o banco de dados
         sincronizarDadosIniciais();
 
-        Log.d(TAG, "Serviço configurado e pronto");
     }
 
     private void criarCanalNotificacao() {
@@ -91,6 +93,8 @@ public class ServicoLocalizacao extends Service {
                     NotificationManager.IMPORTANCE_LOW
             );
             channel.setDescription("Rastreamento de localização para Dungeon Runners");
+            channel.setShowBadge(false);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
@@ -105,7 +109,7 @@ public class ServicoLocalizacao extends Service {
                 this,
                 0,
                 notificationIntent,
-                PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -114,6 +118,8 @@ public class ServicoLocalizacao extends Service {
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
     }
 
@@ -123,6 +129,8 @@ public class ServicoLocalizacao extends Service {
                 .setContentText(String.format("Distância percorrida: %.2f km", distancia / 1000))
                 .setSmallIcon(R.drawable.ic_notification)
                 .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
 
         NotificationManager manager = getSystemService(NotificationManager.class);
@@ -147,18 +155,16 @@ public class ServicoLocalizacao extends Service {
     }
 
     private void processarLocalizacao(Location location) {
-        Log.d(TAG, "Nova localização recebida: " + location.getLatitude() + ", " + location.getLongitude());
-
         if (ultimaLocalizacao != null) {
             float distancia = ultimaLocalizacao.distanceTo(location);
 
-            Log.d(TAG, "Distância calculada: " + distancia + " metros");
+            // Filtros mais precisos para background
+            boolean precisaValida = location.hasAccuracy() && location.getAccuracy() < 20;
+            boolean distanciaValida = distancia > 3 && distancia < 200; // Range mais flexível para background
+            boolean tempoValido = (location.getTime() - ultimaLocalizacao.getTime()) < 30000; // Máximo 30 segundos entre pontos
 
-            // Só conta se a distância for maior que 5 metros e menor que 100 (evita GPS drift)
-            if (distancia > 5 && distancia < 100) {
+            if (precisaValida && distanciaValida && tempoValido) {
                 distanciaPercorrida += distancia;
-
-                Log.d(TAG, "Distância percorrida: " + distancia + "m. Total: " + (distanciaPercorrida / 1000) + "km");
 
                 // Atualizar notificação
                 atualizarNotificacao(distanciaPercorrida);
@@ -166,7 +172,7 @@ public class ServicoLocalizacao extends Service {
                 // Salvar no SharedPreferences
                 salvarProgresso();
 
-                // Enviar broadcast para atualizar a UI - AGORA COM MAIS INFORMAÇÕES
+                // Enviar broadcast para atualizar a UI
                 enviarBroadcast();
 
                 // Atualizar no banco de dados
@@ -178,10 +184,8 @@ public class ServicoLocalizacao extends Service {
                     adicionarXP(xpGanho);
                 }
             } else {
-                Log.d(TAG, "Distância ignorada: " + distancia + "m (fora do range 5-100m)");
             }
         } else {
-            Log.d(TAG, "Primeira localização recebida - definindo como referência");
         }
 
         ultimaLocalizacao = location;
@@ -191,21 +195,17 @@ public class ServicoLocalizacao extends Service {
         try {
             Intent intent = new Intent(ACTION_KM_ATUALIZADO);
             intent.putExtra("kmTotal", (float) (distanciaPercorrida / 1000));
-            intent.putExtra("timestamp", System.currentTimeMillis()); // Para evitar duplicatas
+            intent.putExtra("timestamp", System.currentTimeMillis());
 
-            // Enviar broadcast de forma explícita
             sendBroadcast(intent);
 
-            Log.d(TAG, "📡 Broadcast enviado: " + (distanciaPercorrida / 1000) + " km");
         } catch (Exception e) {
-            Log.e(TAG, "❌ Erro ao enviar broadcast: " + e.getMessage());
         }
     }
 
     private void sincronizarDadosIniciais() {
         String userId = prefs.getString("userId", "");
         if (!userId.isEmpty()) {
-            // Busca dados atualizados do banco ao iniciar o serviço
             buscarDadosAtualizados(userId);
         }
     }
@@ -216,7 +216,6 @@ public class ServicoLocalizacao extends Service {
         supabaseClient.request("GET", query, null, new okhttp3.Callback() {
             @Override
             public void onFailure(okhttp3.Call call, java.io.IOException e) {
-                Log.e(TAG, "Erro ao sincronizar dados iniciais: " + e.getMessage());
             }
 
             @Override
@@ -228,12 +227,11 @@ public class ServicoLocalizacao extends Service {
                         if (array.length() > 0) {
                             JSONObject data = array.getJSONObject(0);
 
-                            // Atualiza SharedPreferences com dados do banco
                             SharedPreferences.Editor editor = prefs.edit();
                             if (data.has("kmTotal") && !data.isNull("kmTotal")) {
                                 double kmBanco = data.getDouble("kmTotal");
                                 editor.putFloat("kmPercorridos", (float) kmBanco);
-                                distanciaPercorrida = kmBanco * 1000; // Converte para metros
+                                distanciaPercorrida = kmBanco * 1000;
                             }
                             if (data.has("xp") && !data.isNull("xp")) {
                                 editor.putInt("xp", data.getInt("xp"));
@@ -242,11 +240,8 @@ public class ServicoLocalizacao extends Service {
                                 editor.putInt("fitcoins", data.getInt("fitcoins"));
                             }
                             editor.apply();
-
-                            Log.d(TAG, "✅ Dados sincronizados do banco - KM: " + (distanciaPercorrida / 1000));
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Erro ao processar sincronização: " + e.getMessage());
                     }
                 }
             }
@@ -257,54 +252,35 @@ public class ServicoLocalizacao extends Service {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putFloat("kmPercorridos", (float) (distanciaPercorrida / 1000));
         editor.apply();
-
-        Log.d(TAG, "Progresso salvo no SharedPreferences: " + (distanciaPercorrida / 1000) + " km");
     }
 
     private void atualizarBancoDados() {
         String userId = prefs.getString("userId", "");
         if (userId.isEmpty()) {
-            Log.e(TAG, "❌ userId não encontrado. Não foi possível atualizar o banco.");
             return;
         }
 
         try {
             JSONObject data = new JSONObject();
-            // CORREÇÃO: Usar "kmTotal" (com T maiúsculo) em vez de "kmtotal"
             data.put("kmTotal", distanciaPercorrida / 1000);
-
-            Log.d(TAG, "📤 Atualizando banco...");
-            Log.d(TAG, "   User ID: " + userId);
-            Log.d(TAG, "   KM Total: " + (distanciaPercorrida / 1000));
 
             supabaseClient.update("perfis", "id=eq." + userId, data, new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull java.io.IOException e) {
-                    Log.e(TAG, "❌ Erro ao atualizar banco de dados: " + e.getMessage());
-                    e.printStackTrace();
                 }
 
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) {
                     if (response.isSuccessful()) {
-                        Log.d(TAG, "✅ Banco de dados atualizado com sucesso!");
-
-                        // Atualizar SharedPreferences também
-                        salvarProgresso();
                     } else {
                         try {
                             String errorBody = response.body() != null ? response.body().string() : "sem corpo";
-                            Log.e(TAG, "❌ Erro ao atualizar banco: " + response.code() + " - " + response.message());
-                            Log.e(TAG, "   Body: " + errorBody);
                         } catch (Exception e) {
-                            Log.e(TAG, "❌ Erro ao ler resposta: " + e.getMessage());
                         }
                     }
                 }
             });
         } catch (Exception e) {
-            Log.e(TAG, "❌ Erro ao criar JSON para atualização: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -316,7 +292,6 @@ public class ServicoLocalizacao extends Service {
         editor.putInt("xp", novoXP);
         editor.apply();
 
-        // Atualizar no banco
         String userId = prefs.getString("userId", "");
         if (!userId.isEmpty()) {
             try {
@@ -326,59 +301,84 @@ public class ServicoLocalizacao extends Service {
                 supabaseClient.update("perfis", "id=eq." + userId, data, new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull java.io.IOException e) {
-                        Log.e(TAG, "Erro ao atualizar XP: " + e.getMessage());
                     }
 
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull Response response) {
                         if (response.isSuccessful()) {
-                            Log.d(TAG, "XP atualizado: +" + xp + " (Total: " + novoXP + ")");
                         }
                     }
                 });
             } catch (Exception e) {
-                Log.e(TAG, "Erro ao atualizar XP: " + e.getMessage());
             }
         }
     }
 
     private boolean verificarPermissoes() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "Permissões de localização não concedidas");
+                != PackageManager.PERMISSION_GRANTED) {
             return false;
+        }
+
+        // Para Android 10+, verificar permissão de background
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) { // se não tiver a permissão ele funciona mas sem contar o segundo plano
+            }
+        }
+        return true;
+    }
+
+    private boolean isAppEmBackground() {
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if (activityManager == null) return true;
+
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        if (appProcesses == null) return true;
+
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (appProcess.processName.equals(getPackageName())) {
+                return appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+            }
         }
         return true;
     }
 
     private void iniciarAtualizacoesLocalizacao() {
         if (!verificarPermissoes()) {
-            Log.e(TAG, "Permissões insuficientes para iniciar atualizações de localização");
             return;
         }
 
+        // configuração melhorada para background
         LocationRequest locationRequest = new LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, 5000) // Atualiza a cada 5 segundos
-                .setMinUpdateIntervalMillis(3000) // Mínimo de 3 segundos
+                Priority.PRIORITY_HIGH_ACCURACY,
+                isAppEmBackground() ? 15000 : 8000) // 15s em background, 8s em foreground
+                .setMinUpdateIntervalMillis(isAppEmBackground() ? 10000 : 5000)
+                .setMaxUpdateDelayMillis(30000)
+                .setWaitForAccurateLocation(true)
                 .build();
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback,
                 getMainLooper()
         );
-        Log.d(TAG, "Atualizações de localização iniciadas");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand chamado");
-        return START_STICKY; // Reinicia o serviço se for morto pelo sistema
+        // garantir que as atualizações continuem mesmo após reinício
+        handler.postDelayed(() -> {
+            if (fusedLocationClient != null && locationCallback != null) {
+                iniciarAtualizacoesLocalizacao();
+            }
+        }, 1000);
+
+        return START_STICKY; // faz o sistema reiniciar o serviço se for morto
     }
 
     @Nullable
@@ -389,10 +389,17 @@ public class ServicoLocalizacao extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
+        super.onDestroy(); // destroi o serviço
+
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
-        Log.d(TAG, "Serviço destruído");
+
+        handler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent); // remove a tarefa
     }
 }
