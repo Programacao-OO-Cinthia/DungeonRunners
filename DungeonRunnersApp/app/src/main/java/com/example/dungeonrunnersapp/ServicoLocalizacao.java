@@ -160,7 +160,7 @@ public class ServicoLocalizacao extends Service {
 
             // Filtros mais precisos para background
             boolean precisaValida = location.hasAccuracy() && location.getAccuracy() < 20;
-            boolean distanciaValida = distancia > 3 && distancia < 200; // Range mais flexível para background
+            boolean distanciaValida = distancia > 5 && distancia < 50; // Range mais flexível para background
             boolean tempoValido = (location.getTime() - ultimaLocalizacao.getTime()) < 30000; // Máximo 30 segundos entre pontos
 
             if (precisaValida && distanciaValida && tempoValido) {
