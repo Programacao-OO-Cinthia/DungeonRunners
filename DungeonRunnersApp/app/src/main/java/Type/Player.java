@@ -1,10 +1,20 @@
 package Type;
+
 public class Player extends User{
     private int fitCoins, xp;
-    public Player(String id, String nickname, int nivel, int idCla,double kmTotal, int fitCoins, int xp ){
-        super(id,nickname,nivel,idCla,kmTotal);
+    private String guildaNome; // Mantemos apenas o nome da guilda/clã
+
+    public Player(String id, String nickname, int nivel, int idCla, double kmTotal, int fitCoins, int xp) {
+        super(id, nickname, nivel, idCla, kmTotal);
         this.fitCoins = fitCoins;
         this.xp = xp;
+    }
+
+    public Player(String id, String nickname, int nivel, int idCla, double kmTotal, int fitCoins, int xp, String guildaNome) {
+        super(id, nickname, nivel, idCla, kmTotal);
+        this.fitCoins = fitCoins;
+        this.xp = xp;
+        this.guildaNome = guildaNome;
     }
 
     public int getFitCoins() {
@@ -21,5 +31,23 @@ public class Player extends User{
 
     public void setXp(int xp) {
         this.xp = xp;
+    }
+
+    public String getGuildaNome() {
+        return guildaNome;
+    }
+
+    public void setGuildaNome(String guildaNome) {
+        this.guildaNome = guildaNome;
+    }
+
+    // CORREÇÃO: Usa o idCla da classe User
+    public boolean temGuilda() {
+        return getIdCla() > 0; // idCla é int, verifica se é maior que 0
+    }
+
+    // CORREÇÃO: Getter para o ID do clã
+    public int getGuildaId() {
+        return getIdCla();
     }
 }

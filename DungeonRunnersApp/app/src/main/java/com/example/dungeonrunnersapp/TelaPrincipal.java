@@ -237,7 +237,6 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     }
 
     private void carregarPlayer() {
-        // Carrega os dados salvos do jogador
         SharedPreferences prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
 
         String id = prefs.getString("userId", "");
@@ -247,7 +246,6 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
         double kmTotal = prefs.getFloat("kmPercorridos", 0.0f);
         int fitCoins = prefs.getInt("fitcoins", 100);
         int xp = prefs.getInt("xp", 0);
-
         playerAtual = new Player(id, nickname, nivel, idCla, kmTotal, fitCoins, xp);
     }
 
@@ -263,10 +261,8 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
     }
 
     private void configurarListeners() {
-        // Botão de centralizar no mapa
         fabLocalizacao.setOnClickListener(v -> centralizarLocalizacao());
 
-        // Botões do menu (funcionalidades futuras)
         btnMissoes.setOnClickListener(v -> {
             Toast.makeText(this, "Missões em desenvolvimento", Toast.LENGTH_SHORT).show();
         });
@@ -275,15 +271,16 @@ public class TelaPrincipal extends AppCompatActivity implements OnMapReadyCallba
             Toast.makeText(this, "Inventário em desenvolvimento", Toast.LENGTH_SHORT).show();
         });
 
+        // ATUALIZADO: Navega para a tela de guilda
         btnGuilda.setOnClickListener(v -> {
-            Toast.makeText(this, "Guilda em desenvolvimento", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(TelaPrincipal.this, TelaGuilda.class);
+            startActivity(intent);
         });
 
         btnLoja.setOnClickListener(v -> {
             Toast.makeText(this, "Loja em desenvolvimento", Toast.LENGTH_SHORT).show();
         });
 
-        // Cards das dungeons por dificuldade
         cardDungeon1.setOnClickListener(v -> iniciarDungeon("Fácil"));
         cardDungeon2.setOnClickListener(v -> iniciarDungeon("Médio"));
         cardDungeon3.setOnClickListener(v -> iniciarDungeon("Difícil"));
