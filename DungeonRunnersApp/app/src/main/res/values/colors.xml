@@ -1,20 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Cores principais -->
-    <color name="primary_color">#6C63FF</color>
+    <!-- Cores de Background -->
     <color name="background_dark">#1A1A2E</color>
-    <color name="card_background">#16213E</color>
-    <color name="card_background_dark">#0F1419</color>
+    <color name="card_background">#2A2A40</color>
+    <color name="card_background_dark">#1E1E30</color>
 
-    <!-- Cores de texto -->
+    <!-- Cores Primárias -->
+    <color name="primary_color">#FF6B35</color>
+    <color name="primary_dark">#E55A2B</color>
+    <color name="secondary_color">#3A3A52</color>
+
+    <!-- Cores de Destaque -->
+    <color name="gold">#FFD700</color>
+    <color name="success_green">#4CAF50</color>
+    <color name="warning_yellow">#FFC107</color>
+    <color name="error_color">#F44336</color>
+
+    <!-- Cores de Texto -->
     <color name="white">#FFFFFF</color>
     <color name="text_secondary">#A0A0A0</color>
-    <color name="gold">#FFD700</color>
+    <color name="text_hint">#6C6C7E</color>
 
     <!-- Cores de UI -->
     <color name="divider_color">#2A2A3E</color>
-    <color name="error_color">#FF4444</color>
-
-    <!-- Outras cores -->
+    <color name="transparent">#00000000</color>
+    <color name="overlay_dark">#40000000</color>
     <color name="black">#000000</color>
 </resources>

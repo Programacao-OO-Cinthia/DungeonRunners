@@ -210,8 +210,10 @@
                 android:layout_marginBottom="12dp"
                 android:background="@drawable/button_menu_background"
                 android:contentDescription="Missões"
-                android:padding="12dp"
-                android:src="@drawable/ic_missoes" />
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:src="@drawable/missao" />
 
             <ImageButton
                 android:id="@+id/btnInventario"
@@ -220,8 +222,10 @@
                 android:layout_marginBottom="12dp"
                 android:background="@drawable/button_menu_background"
                 android:contentDescription="Inventário"
-                android:padding="12dp"
-                android:src="@drawable/ic_inventario" />
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:src="@drawable/inventario" />
 
             <ImageButton
                 android:id="@+id/btnGuilda"
@@ -233,7 +237,7 @@
                 android:padding="8dp"
                 android:scaleType="fitCenter"
                 android:adjustViewBounds="true"
-                android:src="@drawable/escudo" />
+                android:src="@drawable/cla" />
 
             <ImageButton
                 android:id="@+id/btnLoja"
@@ -241,12 +245,14 @@
                 android:layout_height="56dp"
                 android:background="@drawable/button_menu_background"
                 android:contentDescription="Loja"
-                android:padding="12dp"
-                android:src="@drawable/ic_loja" />
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="true"
+                android:src="@drawable/loja" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Painel de Dungeons (lado direito) - MAIOR E MAIS DESTACADO -->
+    <!-- Painel de Dungeons -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardDungeons"
         android:layout_width="90dp"
@@ -299,7 +305,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:contentDescription="Dungeon Fácil"
-                        android:src="@drawable/ic_dungeon" />
+                        android:src="@drawable/dif_facil" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -336,7 +342,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:contentDescription="Dungeon Médio"
-                        android:src="@drawable/ic_dungeon" />
+                        android:src="@drawable/dif_medio" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -372,7 +378,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:contentDescription="Dungeon Difícil"
-                        android:src="@drawable/ic_dungeon" />
+                        android:src="@drawable/dif_dificil" />
 
                     <TextView
                         android:layout_width="wrap_content"
