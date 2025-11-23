@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Para Android 9 e inferior -->
+    <!-- Para exitar erros no Android 9 e inferior -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
         tools:node="remove" />
@@ -35,7 +35,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- Activities -->
+        <!-- Main tela de login quando o APP iniciar -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -45,27 +45,32 @@
             </intent-filter>
         </activity>
 
+        <!-- Tela de principal -->
         <activity
             android:name=".TelaPrincipal"
             android:exported="false"
             android:launchMode="singleTop"
             android:screenOrientation="portrait" />
 
+        <!-- Tela de Cadastro -->
         <activity
             android:name=".TelaCadastro"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- NOVA: Tela de Guilda -->
+        <!-- Tela de Guilda -->
         <activity
             android:name=".TelaGuilda"
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- Tela de ranking -->
         <activity
             android:name=".TelaRanking"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <!-- Para fazer o tracking da localização -->
 
         <!-- Serviço de Localização -->
         <service

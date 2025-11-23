@@ -29,12 +29,12 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
-    private Button btnEntrarLogin;
-    private Button btnCadastrarLogin;
-    private EditText edtUsuario;
-    private EditText edtSenha;
+    private Button btnEntrarLogin; // botão de logar
+    private Button btnCadastrarLogin; // botão que muda para a tela de cadastro
+    private EditText edtUsuario; // campo de texto do nickname do usuário
+    private EditText edtSenha; // campo de texto da senha do usuário
 
-    private SupabaseClient supabaseClient;
+    private SupabaseClient supabaseClient; // Objeto de conexão com o supabase (banco de dados)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +48,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         supabaseClient = new SupabaseClient();
-        inicializarComponentes();
-        configurarListeners();
+        inicializarComponentes(); // pega os objetos da interface gráfica
+        configurarListeners(); // confiura as funções de cada botão
     }
 
     private void inicializarComponentes() {
@@ -60,16 +60,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void configurarListeners() {
-        btnEntrarLogin.setOnClickListener(v -> realizarLogin());
-        btnCadastrarLogin.setOnClickListener(v -> mudarTelaCadastro());
+        btnEntrarLogin.setOnClickListener(v -> realizarLogin()); // método de realizar o login
+        btnCadastrarLogin.setOnClickListener(v -> mudarTelaCadastro()); // método de ir para a tela de cadastro
     }
 
     private void mudarTelaCadastro() {
-        Intent intent = new Intent(MainActivity.this, TelaCadastro.class);
-        startActivity(intent);
+        Intent intent = new Intent(MainActivity.this, TelaCadastro.class); // armazena a tela que deseja ir
+        startActivity(intent); // vai para a tela de cadastro
     }
 
-    private void realizarLogin() {
+    private void realizarLogin() { // realiza o login dos usuários
         String usuario = edtUsuario.getText().toString().trim();
         String senha = edtSenha.getText().toString();
 
@@ -83,12 +83,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void buscarUsuarioNoBanco(String usuario, String senha) {
-        // CORRIGIDO: Buscar com select=* para pegar todos os campos
+        // Buscar com select=* para pegar todos os campos, estava dando erro quando fazia busca sem todos os campos
         String query = "perfis?select=*&or=(nickname.eq." + usuario + ",nome.eq." + usuario + ")";
 
         Log.d(TAG, "Buscando usuário: " + usuario);
 
-        supabaseClient.request("GET", query, null, new Callback() {
+        supabaseClient.request("GET", query, null, new Callback() { // da get nas informações dos usuários
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() -> {
@@ -104,15 +104,13 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call call, Response response) throws IOException {
                 String responseBody = response.body().string();
 
-                Log.d(TAG, "Response: " + responseBody);
-
                 runOnUiThread(() -> {
                     btnEntrarLogin.setEnabled(true);
 
                     try {
                         JSONArray usuarios = new JSONArray(responseBody);
 
-                        if (usuarios.length() == 0) {
+                        if (usuarios.length() == 0) { // valida a resposta, caso o nickname não seja encontrado
                             Toast.makeText(MainActivity.this,
                                     "Usuário não encontrado",
                                     Toast.LENGTH_SHORT).show();
@@ -122,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                         JSONObject usuarioJson = usuarios.getJSONObject(0);
                         String senhaArmazenada = usuarioJson.getString("senha");
 
-                        if (senha.equals(senhaArmazenada)) {
+                        if (senha.equals(senhaArmazenada)) { // valida o usuário encontrado
                             Player player = criarPlayerDoJSON(usuarioJson);
                             salvarSessao(player);
 
@@ -133,17 +131,16 @@ public class MainActivity extends AppCompatActivity {
                             Intent intent = new Intent(MainActivity.this, TelaPrincipal.class);
                             startActivity(intent);
                             finish();
-                        } else {
+                        } else { // valida a resposta, caso o nickname esteja certo mas a senha não
                             Toast.makeText(MainActivity.this,
                                     "Senha incorreta",
                                     Toast.LENGTH_SHORT).show();
                         }
 
-                    } catch (Exception e) {
+                    } catch (Exception e) { // caso de erro
                         Toast.makeText(MainActivity.this,
                                 "Erro ao processar login: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Erro ao processar login", e);
                     }
                 });
             }
@@ -182,10 +179,7 @@ public class MainActivity extends AppCompatActivity {
             editor.putBoolean("logado", true);
 
             editor.apply();
-
-            Log.d(TAG, "✅ Sessão salva - User ID: " + player.getId() + ", KM inicial: " + player.getKmTotal());
         } catch (Exception e) {
-            Log.e(TAG, "❌ Erro ao salvar sessão", e);
         }
     }
 }
