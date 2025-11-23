@@ -29,12 +29,12 @@ public class MembroGuildaAdapter extends RecyclerView.Adapter<MembroGuildaAdapte
     @Override
     public void onBindViewHolder(@NonNull MembroViewHolder holder, int position) {
         MembroGuilda membro = membros.get(position);
-        holder.bind(membro);
+        holder.bind(membro, position);
     }
 
     @Override
     public int getItemCount() {
-        return membros.size();
+        return membros != null ? membros.size() : 0;
     }
 
     public void setMembros(List<MembroGuilda> membros) {
@@ -56,15 +56,19 @@ public class MembroGuildaAdapter extends RecyclerView.Adapter<MembroGuildaAdapte
             txtCargoMembro = itemView.findViewById(R.id.txtCargoMembro);
         }
 
-        public void bind(MembroGuilda membro) {
+        public void bind(MembroGuilda membro, int position) {
+            // Define os textos
             txtNomeMembro.setText(membro.getNickname());
             txtNivelMembro.setText("Nível " + membro.getNivel());
             txtKmMembro.setText(String.format("%.2f km", membro.getKmTotal()));
             txtCargoMembro.setText(membro.getCargo());
 
-            // Destacar o cargo de líder
+            // Destaca o líder com cor dourada
             if ("Líder".equals(membro.getCargo())) {
                 txtCargoMembro.setTextColor(itemView.getContext().getColor(R.color.gold));
+
+                // Adiciona emoji de coroa para o líder
+                txtCargoMembro.setText("👑 " + membro.getCargo());
             } else {
                 txtCargoMembro.setTextColor(itemView.getContext().getColor(R.color.text_secondary));
             }

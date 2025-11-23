@@ -27,12 +27,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Guilda"
+            android:text="Clã"
             android:textColor="@color/white"
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <!-- Espaço para alinhar o título no centro -->
         <View
             android:layout_width="40dp"
             android:layout_height="40dp" />
@@ -50,12 +49,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Header da Guilda (Visível quando tem guilda) -->
+            <!-- Header do Clã (Visível quando tem clã) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardHeaderGuilda"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="@color/card_background"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
@@ -71,7 +70,7 @@
                         android:id="@+id/txtNomeGuilda"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Nome da Guilda"
+                        android:text="Nome do Clã"
                         android:textColor="@color/white"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -81,9 +80,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="21.60 km"
+                        android:text="0.00 km"
                         android:textColor="@color/gold"
-                        android:textSize="18sp"
+                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <View
@@ -96,7 +95,7 @@
                         android:id="@+id/txtInfoGuilda"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Membros: 5 | Criada em: 01/01/2024"
+                        android:text="Membros: 0"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
@@ -104,12 +103,12 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Lista de Membros (Visível quando tem guilda) -->
+            <!-- Lista de Membros (Visível quando tem clã) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardMembros"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="20dp"
                 app:cardBackgroundColor="@color/card_background"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
@@ -124,30 +123,32 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Membros da Guilda"
+                        android:text="Membros do Clã"
                         android:textColor="@color/white"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:layout_marginBottom="12dp" />
+                        android:layout_marginBottom="16dp" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerMembros"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false" />
+                        android:nestedScrollingEnabled="false"
+                        android:clipToPadding="false" />
 
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Lista de Guildas Disponíveis (Visível quando não tem guilda) -->
+            <!-- Lista de Clãs Disponíveis (Visível quando não tem clã) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardGuildasDisponiveis"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@color/card_background"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                app:cardElevation="4dp"
+                android:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -158,71 +159,59 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Guildas Disponíveis"
+                        android:text="Clãs Disponíveis"
                         android:textColor="@color/white"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:layout_marginBottom="16dp" />
 
+                    <TextView
+                        android:id="@+id/txtSemGuildas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Nenhum clã disponível no momento"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:padding="20dp"
+                        android:visibility="gone" />
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerGuildas"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false" />
-
-                    <!-- Controles de Paginação -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center"
-                        android:layout_marginTop="16dp">
-
-                        <Button
-                            android:id="@+id/btnPaginaAnterior"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Anterior"
-                            android:background="@drawable/button_secondary"
-                            android:textColor="@color/white"
-                            android:textSize="12sp"
-                            android:enabled="false" />
-
-                        <TextView
-                            android:id="@+id/txtPaginaAtual"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Página 1"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
-                            android:layout_marginHorizontal="16dp" />
-
-                        <Button
-                            android:id="@+id/btnProximaPagina"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Próxima"
-                            android:background="@drawable/button_secondary"
-                            android:textColor="@color/white"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
+                        android:nestedScrollingEnabled="false"
+                        android:clipToPadding="false" />
 
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Botão Criar Guilda (Visível quando não tem guilda) -->
+            <!-- Botão Criar Clã (Visível quando não tem clã) -->
             <Button
                 android:id="@+id/btnCriarGuilda"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Criar Nova Guilda"
-                android:background="@drawable/button_primary"
+                android:layout_height="56dp"
+                android:text="Criar Novo Clã"
+                android:backgroundTint="@color/primary_color"
                 android:textColor="@color/white"
                 android:layout_marginTop="16dp"
                 android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:visibility="gone" />
+
+            <!-- Botão Sair do Clã (Visível quando tem clã) -->
+            <Button
+                android:id="@+id/btnSairCla"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Sair do Clã"
+                android:backgroundTint="@color/error_color"
+                android:textColor="@color/white"
+                android:layout_marginTop="16dp"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:visibility="gone" />
 
         </LinearLayout>
 

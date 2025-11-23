@@ -11,69 +11,67 @@ import androidx.recyclerview.widget.RecyclerView;
 import Type.Cla;
 import java.util.List;
 
-public class GuildaAdapter extends RecyclerView.Adapter<GuildaAdapter.GuildaViewHolder> {
+public class GuildaAdapter extends RecyclerView.Adapter<GuildaAdapter.ClaViewHolder> {
 
-    private List<Cla> guildas;
-    private OnGuildaClickListener listener;
+    private List<Cla> clas;
+    private OnClaClickListener listener;
 
-    public interface OnGuildaClickListener {
-        void onEntrarGuildaClick(Cla guilda);
+    public interface OnClaClickListener {
+        void onEntrarClaClick(Cla cla);
     }
 
-    public GuildaAdapter(List<Cla> guildas, OnGuildaClickListener listener) {
-        this.guildas = guildas;
+    public GuildaAdapter(List<Cla> clas, OnClaClickListener listener) {
+        this.clas = clas;
         this.listener = listener;
     }
 
     @NonNull
     @Override
-    public GuildaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ClaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_guilda, parent, false);
-        return new GuildaViewHolder(view);
+        return new ClaViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull GuildaViewHolder holder, int position) {
-        Cla guilda = guildas.get(position);
-        holder.bind(guilda, listener);
+    public void onBindViewHolder(@NonNull ClaViewHolder holder, int position) {
+        Cla cla = clas.get(position);
+        holder.bind(cla, listener);
     }
 
     @Override
     public int getItemCount() {
-        return guildas.size();
+        return clas != null ? clas.size() : 0;
     }
 
-    public void setGuildas(List<Cla> guildas) {
-        this.guildas = guildas;
+    public void setGuildas(List<Cla> clas) {
+        this.clas = clas;
         notifyDataSetChanged();
     }
 
-    static class GuildaViewHolder extends RecyclerView.ViewHolder {
-        private TextView txtNomeGuilda;
+    static class ClaViewHolder extends RecyclerView.ViewHolder {
+        private TextView txtNomeCla;
         private TextView txtDescricao;
         private TextView txtInfo;
         private Button btnEntrar;
 
-        public GuildaViewHolder(@NonNull View itemView) {
+        public ClaViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtNomeGuilda = itemView.findViewById(R.id.txtNomeGuildaItem);
+            txtNomeCla = itemView.findViewById(R.id.txtNomeGuildaItem);
             txtDescricao = itemView.findViewById(R.id.txtDescricaoGuilda);
             txtInfo = itemView.findViewById(R.id.txtInfoGuilda);
             btnEntrar = itemView.findViewById(R.id.btnEntrarGuilda);
         }
 
-        public void bind(Cla guilda, OnGuildaClickListener listener) {
-            txtNomeGuilda.setText(guilda.getNome());
-            txtDescricao.setText(guilda.getDescricao());
-
-            // CORREÇÃO: Mostra pontuação em vez de km
-            txtInfo.setText(String.format(" %d membros | 🏆 %d pontos",
-                    guilda.getMembrosCount(), guilda.getPontuacao()));
+        public void bind(Cla cla, OnClaClickListener listener) {
+            txtNomeCla.setText(cla.getNome());
+            txtDescricao.setText(cla.getDescricao());
+            txtInfo.setText(String.format("👥 %d membros | 🏆 %d pontos",
+                    cla.getMembrosCount(), cla.getPontuacao()));
 
             btnEntrar.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onEntrarGuildaClick(guilda);
+                    listener.onEntrarClaClick(cla);
                 }
             });
         }
