@@ -14,7 +14,6 @@ public class RankingPlayer implements Comparable<RankingPlayer> {
         this.kmTotal = kmTotal;
     }
 
-    // Getters e Setters
     public String getId() { return id; }
     public String getNickname() { return nickname; }
     public int getNivel() { return nivel; }
@@ -24,7 +23,7 @@ public class RankingPlayer implements Comparable<RankingPlayer> {
 
     @Override
     public int compareTo(RankingPlayer outro) {
-        // Ordena por KM total (decrescente)
+        // Ordena por KM total de forma decrescente
         return Double.compare(outro.getKmTotal(), this.getKmTotal());
     }
 
