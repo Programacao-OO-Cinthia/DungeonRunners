@@ -15,7 +15,7 @@ public class SupabaseClient {
 
     // 🔗 URL e chave pública do seu projeto Supabase
     private static final String SUPABASE_URL = "https://gcttbfouxzdgmsypdcyz.supabase.co/rest/v1/";
-    private static final String SUPABASE_KEY = "sb_publishable_gVu2gzS2lvFCTi_k1Idbjg_gkILLvU6"; // coloque aqui sua publishable key
+    private static final String SUPABASE_KEY = "sb_publishable_gVu2gzS2lvFCTi_k1Idbjg_gkILLvU6";
 
     private final OkHttpClient client = new OkHttpClient();
 
