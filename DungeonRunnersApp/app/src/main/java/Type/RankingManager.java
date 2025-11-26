@@ -15,10 +15,10 @@ public class RankingManager {
     }
 
     /**
-     * Carrega o ranking geral dos jogadores (TOP 10 por KM)
+     * Carrega o Top 10 jogadores do ranking
      */
-    public void carregarRankingGeral(RankingCallback callback) {
-        // Query para buscar top 10 jogadores ordenados por kmTotal
+    public void carregarRankingGeral(RankingCallback callback) {        // buscar top 10 jogadores ordenados por kmTotal
+
         String query = "perfis?select=id,nickname,nivel,kmTotal&order=kmTotal.desc&limit=" + TOP_COUNT;
 
         supabaseClient.request("GET", query, null, new okhttp3.Callback() {
@@ -46,10 +46,7 @@ public class RankingManager {
         });
     }
 
-    /**
-     * Processa o JSON e cria a lista ordenada usando Collections
-     */
-    private List<RankingPlayer> processarRanking(JSONArray jogadoresArray) throws Exception {
+    private List<RankingPlayer> processarRanking(JSONArray jogadoresArray) throws Exception { // processa o json do resultado e cria uma lista ordenada
         List<RankingPlayer> ranking = new ArrayList<>();
 
         for (int i = 0; i < jogadoresArray.length(); i++) {
@@ -64,21 +61,16 @@ public class RankingManager {
             ranking.add(player);
         }
 
-        // ORDENAÇÃO usando Collections.sort (implementa Comparable)
         Collections.sort(ranking);
 
-        // Define as posições
         for (int i = 0; i < ranking.size(); i++) {
             ranking.get(i).setPosicao(i + 1);
         }
 
         return ranking;
     }
-
-    /**
-     * Busca a posição atual do jogador no ranking geral
-     */
-    public void buscarPosicaoJogador(String userId, PosicaoCallback callback) {
+    
+    public void buscarPosicaoJogador(String userId, PosicaoCallback callback) { // Busca a posição atual do jogador no ranking geral
         String query = "perfis?select=id,kmTotal&order=kmTotal.desc";
 
         supabaseClient.request("GET", query, null, new okhttp3.Callback() {
@@ -110,10 +102,10 @@ public class RankingManager {
         for (int i = 0; i < todosJogadores.length(); i++) {
             JSONObject jogador = todosJogadores.getJSONObject(i);
             if (jogador.getString("id").equals(userId)) {
-                return i + 1; // Posição no ranking (1-based)
+                return i + 1; // Posição no ranking 
             }
         }
-        return -1; // Não encontrado
+        return -1; 
     }
 
     // Interfaces de callback para tratamento assíncrono
