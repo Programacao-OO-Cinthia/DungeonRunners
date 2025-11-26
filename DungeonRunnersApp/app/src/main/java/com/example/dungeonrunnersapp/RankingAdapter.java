@@ -58,13 +58,6 @@ public class RankingAdapter extends RecyclerView.Adapter<RankingAdapter.RankingV
             txtNickname = itemView.findViewById(R.id.txtNicknameRanking);
             txtNivel = itemView.findViewById(R.id.txtNivelRanking);
             txtKmTotal = itemView.findViewById(R.id.txtKmRanking);
-
-            // Log para debug
-            if (imgMedalha == null) Log.e("RankingAdapter", "imgMedalha é nulo!");
-            if (txtPosicao == null) Log.e("RankingAdapter", "txtPosicao é nulo!");
-            if (txtNickname == null) Log.e("RankingAdapter", "txtNickname é nulo!");
-            if (txtNivel == null) Log.e("RankingAdapter", "txtNivel é nulo!");
-            if (txtKmTotal == null) Log.e("RankingAdapter", "txtKmTotal é nulo!");
         }
 
         public void bind(RankingPlayer player) {
@@ -109,7 +102,7 @@ public class RankingAdapter extends RecyclerView.Adapter<RankingAdapter.RankingV
                 txtPosicao.setVisibility(View.GONE);
             } catch (Exception e) {
                 Log.e("RankingAdapter", "Erro ao carregar medalha: " + e.getMessage());
-                // Fallback: mostrar número se a medalha não carregar
+                // mostrar número se a medalha não carregar
                 configurarPosicaoNumerica(getAdapterPosition() + 1);
             }
         }
