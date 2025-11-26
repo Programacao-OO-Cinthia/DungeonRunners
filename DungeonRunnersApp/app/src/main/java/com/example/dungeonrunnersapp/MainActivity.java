@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText edtUsuario; // campo de texto do nickname do usuário
     private EditText edtSenha; // campo de texto da senha do usuário
 
-    private SupabaseClient supabaseClient; // Objeto de conexão com o supabase (banco de dados)
+    private SupabaseClient supabaseClient; // Objeto de conexão com o supabase
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void buscarUsuarioNoBanco(String usuario, String senha) {
-        // Buscar com select=* para pegar todos os campos, estava dando erro quando fazia busca sem todos os campos
+        // Buscar tudo para pegar todos os campos, estava dando erro quando fazia busca sem todos os campos
         String query = "perfis?select=*&or=(nickname.eq." + usuario + ",nome.eq." + usuario + ")";
 
         Log.d(TAG, "Buscando usuário: " + usuario);
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JSONArray usuarios = new JSONArray(responseBody);
 
-                        if (usuarios.length() == 0) { // valida a resposta, caso o nickname não seja encontrado
+                        if (usuarios.length() == 0) { // valida a resposta caso o nickname não seja encontrado
                             Toast.makeText(MainActivity.this,
                                     "Usuário não encontrado",
                                     Toast.LENGTH_SHORT).show();
