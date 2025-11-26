@@ -127,10 +127,7 @@ public class TelaGuilda extends AppCompatActivity implements GuildaAdapter.OnCla
         prefs = getSharedPreferences("DungeonRunners", MODE_PRIVATE);
     }
 
-    /**
-     * Carrega o player diretamente do banco de dados Supabase
-     * Isso garante que sempre tenhamos os dados mais atualizados
-     */
+    //Carrega o player diretamente do banco de dados Supabase
     private void carregarPlayerDoBanco() {
         String userId = prefs.getString("userId", "");
 
@@ -249,7 +246,7 @@ public class TelaGuilda extends AppCompatActivity implements GuildaAdapter.OnCla
 
                             claAtual = new Cla(id, nome, descricao, membrosCount, pontuacao, "");
 
-                            // Atualiza o nome do clã no SharedPreferences
+                            // Atualiza o nome do clã 
                             SharedPreferences.Editor editor = prefs.edit();
                             editor.putString("guildaNome", nome);
                             editor.apply();
@@ -260,7 +257,7 @@ public class TelaGuilda extends AppCompatActivity implements GuildaAdapter.OnCla
                         } else {
                             Log.w(TAG, "Clã não encontrado no banco");
                             runOnUiThread(() -> {
-                                // Se o clã não existe mais, limpa a referência
+                                // Se o clã não existe mais limpa a referência
                                 SharedPreferences.Editor editor = prefs.edit();
                                 editor.putInt("idCla", 0);
                                 editor.remove("guildaNome");
@@ -312,7 +309,7 @@ public class TelaGuilda extends AppCompatActivity implements GuildaAdapter.OnCla
                             // Soma os kms de todos os membros
                             kmTotalCla += kmTotal;
 
-                            // O primeiro membro (maior km) é o líder
+                            // O membro com maior KM é o líder
                             boolean isLider = i == 0;
                             String cargo = isLider ? "Líder" : "Membro";
 
