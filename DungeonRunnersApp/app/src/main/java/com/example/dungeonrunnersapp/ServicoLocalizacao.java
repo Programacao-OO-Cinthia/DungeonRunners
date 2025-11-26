@@ -65,7 +65,7 @@ public class ServicoLocalizacao extends Service {
         // Carregar distância já percorrida
         distanciaPercorrida = prefs.getFloat("kmPercorridos", 0.0f) * 1000; // Converter km para metros
 
-        // DIAGNÓSTICO: Verificar userId
+        //  Verificar userId
         String userId = prefs.getString("userId", "");
 
         // Criar canal de notificação
@@ -160,7 +160,7 @@ public class ServicoLocalizacao extends Service {
 
             // Filtros mais precisos para background
             boolean precisaValida = location.hasAccuracy() && location.getAccuracy() < 20;
-            boolean distanciaValida = distancia > 5 && distancia < 50; // Range mais flexível para background
+            boolean distanciaValida = distancia > 5 && distancia < 50;
             boolean tempoValido = (location.getTime() - ultimaLocalizacao.getTime()) < 30000; // Máximo 30 segundos entre pontos
 
             if (precisaValida && distanciaValida && tempoValido) {
