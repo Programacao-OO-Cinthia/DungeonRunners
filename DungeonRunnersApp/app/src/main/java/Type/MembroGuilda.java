@@ -18,7 +18,6 @@ public class MembroGuilda extends User{
         this.cargo = cargo;
     }
 
-    // Getters
     public String getId() { return id; }
     public String getNickname() { return nickname; }
     public int getNivel() { return nivel; }
