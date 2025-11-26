@@ -7,7 +7,7 @@ public class Cla {
     private int membrosCount;
     private int pontuacao;
     private String dataCriacao;
-    private String liderNome; //campo para nome do líder
+    private String liderNome;
 
     public Cla(int id, String nome, String descricao, int membrosCount, int pontuacao, String dataCriacao) {
         this.id = id;
@@ -16,10 +16,9 @@ public class Cla {
         this.membrosCount = membrosCount;
         this.pontuacao = pontuacao;
         this.dataCriacao = dataCriacao;
-        this.liderNome = "Líder"; // Valor padrão
+        this.liderNome = "Líder"; 
     }
 
-    // Construtor com líder
     public Cla(int id, String nome, String descricao, int membrosCount, int pontuacao, String dataCriacao, String liderNome) {
         this.id = id;
         this.nome = nome;
@@ -30,7 +29,6 @@ public class Cla {
         this.liderNome = liderNome;
     }
 
-    // Getters
     public int getId() { return id; }
     public String getNome() { return nome; }
     public String getDescricao() { return descricao; }
