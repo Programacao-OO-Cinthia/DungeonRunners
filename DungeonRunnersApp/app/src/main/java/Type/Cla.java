@@ -7,7 +7,7 @@ public class Cla {
     private int membrosCount;
     private int pontuacao;
     private String dataCriacao;
-    private String liderNome; // ADICIONADO: campo para nome do líder
+    private String liderNome; //campo para nome do líder
 
     public Cla(int id, String nome, String descricao, int membrosCount, int pontuacao, String dataCriacao) {
         this.id = id;
@@ -37,8 +37,7 @@ public class Cla {
     public int getMembrosCount() { return membrosCount; }
     public int getPontuacao() { return pontuacao; }
     public String getDataCriacao() { return dataCriacao; }
-    public String getLiderNome() { return liderNome; } // ADICIONADO
+    public String getLiderNome() { return liderNome; } 
 
-    // Para compatibilidade com código existente
     public double getKmTotal() { return pontuacao; }
 }
