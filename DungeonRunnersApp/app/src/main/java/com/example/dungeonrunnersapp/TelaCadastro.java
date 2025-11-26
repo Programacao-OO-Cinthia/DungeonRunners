@@ -128,9 +128,7 @@ public class TelaCadastro extends AppCompatActivity {
         verificarNicknameDisponivel(nome, nickname, senha);
     }
 
-    /**
-     * Verifica se o nickname já está em uso no banco de dados
-     */
+    // Verifica se o nickname já está em uso no banco de dados
     private void verificarNicknameDisponivel(String nome, String nickname, String senha) {
         btnCadastrar.setEnabled(false);
         btnCadastrar.setText("Verificando...");
@@ -173,7 +171,7 @@ public class TelaCadastro extends AppCompatActivity {
                                 edtNickname.selectAll();
                             });
                         } else {
-                            // Nickname disponível, prosseguir com cadastro
+                            // Nickname disponível
                             runOnUiThread(() -> {
                                 cadastrarUsuarioNoBanco(nome, nickname, senha);
                             });
@@ -249,7 +247,7 @@ public class TelaCadastro extends AppCompatActivity {
                         try {
                             String errorBody = response.body().string();
                             runOnUiThread(() -> {
-                                // Verificar se é erro de unique constraint
+                                // Verificar se é erro 
                                 if (errorBody.contains("duplicate key") || errorBody.contains("unique")) {
                                     Toast.makeText(TelaCadastro.this,
                                             "❌ Este nickname já está em uso! Escolha outro.",
