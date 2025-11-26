@@ -96,7 +96,7 @@ public class CriarClaActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     if (response.isSuccessful()) {
-                        // Busca o ID do clã recém-criado e associa o jogador
+                        // Busca o ID do clã criado agora e associa o jogador
                         associarJogadorAoCla(nome);
                     } else {
                         runOnUiThread(() -> {
