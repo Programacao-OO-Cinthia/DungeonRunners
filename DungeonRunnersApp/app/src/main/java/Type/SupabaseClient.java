@@ -21,11 +21,6 @@ public class SupabaseClient {
 
     /**
      * Envia uma requisição HTTP genérica para o Supabase.
-     *
-     * @param method   Método HTTP: "GET", "POST", "PATCH" ou "DELETE"
-     * @param table    Nome da tabela (ex: "perfis", "guilda", "raid")
-     * @param body     Corpo JSON da requisição (pode ser null para GET)
-     * @param callback Callback com o resultado da operação
      */
     public void request(String method, String table, JSONObject body, Callback callback) {
         RequestBody requestBody = body != null
@@ -45,9 +40,6 @@ public class SupabaseClient {
 
     /**
      * Faz uma requisição GET simples para buscar todos os registros de uma tabela.
-     *
-     * @param table Nome da tabela.
-     * @param callback Callback com o resultado.
      */
     public void getAll(String table, Callback callback) {
         request("GET", table + "?select=*", null, callback);
@@ -55,10 +47,6 @@ public class SupabaseClient {
 
     /**
      * Envia um novo registro (POST) para a tabela especificada.
-     *
-     * @param table Nome da tabela.
-     * @param data  Objeto JSON com os dados a inserir.
-     * @param callback Callback com o resultado.
      */
     public void insert(String table, JSONObject data, Callback callback) {
         request("POST", table, data, callback);
@@ -66,11 +54,6 @@ public class SupabaseClient {
 
     /**
      * Atualiza um registro existente (PATCH) com base em uma condição (exemplo: id=eq.1).
-     *
-     * @param table Nome da tabela.
-     * @param condition Filtro de atualização (ex: "id=eq.1").
-     * @param data  Dados a atualizar.
-     * @param callback Callback com o resultado.
      */
     public void update(String table, String condition, JSONObject data, Callback callback) {
         request("PATCH", table + "?" + condition, data, callback);
@@ -78,10 +61,6 @@ public class SupabaseClient {
 
     /**
      * Deleta um registro com base em uma condição.
-     *
-     * @param table Nome da tabela.
-     * @param condition Condição (ex: "id=eq.1").
-     * @param callback Callback com o resultado.
      */
     public void delete(String table, String condition, Callback callback) {
         request("DELETE", table + "?" + condition, null, callback);
@@ -89,10 +68,6 @@ public class SupabaseClient {
 
     /**
      * Insere um novo perfil com UUID gerado automaticamente.
-     *
-     * @param nome Nome do runner.
-     * @param idade Idade do runner.
-     * @param callback Callback com o resultado.
      */
     public void inserirPerfil(String nome, int idade, Callback callback) {
         try {
