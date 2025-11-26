@@ -41,12 +41,10 @@ public class Player extends User{
         this.guildaNome = guildaNome;
     }
 
-    //  Usa o idCla da classe User
     public boolean temGuilda() {
-        return getIdCla() > 0; // idCla é int, verifica se é maior que 0
+        return getIdCla() > 0;
     }
 
-    // Getter para o ID do clã
     public int getGuildaId() {
         return getIdCla();
     }
